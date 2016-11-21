@@ -1,0 +1,2 @@
+[1124/093833:WARNING:ipc_channel_win.cc(264)] Unable to create pipe "\\.\pipe\chrome.shake_xp2p" in client mode. Error :2
+[1124/093834:WARNING:ipc_channel_win.cc(264)] Unable to create pipe "\\.\pipe\chrome.shake_xp2p" in client mode. Error :2

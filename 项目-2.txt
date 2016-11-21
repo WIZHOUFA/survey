@@ -1,0 +1,164 @@
+加密:md5 sha1
+--------------------------
+public class DataUtil {
+	/**
+	 * 使用md5算法进行加密 
+	 */
+	public static String md5(String src){
+		try {
+			StringBuffer buffer = new StringBuffer();
+			char[] chars = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+			byte[] bytes = src.getBytes();
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			byte[] targ = md.digest(bytes);
+			for(byte b: targ){
+				buffer.append(chars[(b >> 4) & 0x0F]);
+				buffer.append(chars[b & 0x0F]);
+			}
+			return buffer.toString();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null ;
+	}
+}
+
+
+配置spring的监听器(web.xml)
+--------------------------
+<!-- 通过上下文参数配置spring文件的位置 -->
+<context-param>
+	<param-name>contextConfigLocation</param-name>
+	<param-value>classpath:beans.xml</param-value>
+</context-param>
+
+<!-- 上下文载入器监听器,确保web服务器启动时,直接完成spring容器的初始化 -->
+<listener>
+	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+
+
+功能性:
+到达注册页面
+1.导航栏-->用户注册链接
+2.进入RegAction.toRegPage()方法
+	public String toRegPage(){
+		return "regPage" ;
+	}
+3.struts.xml
+	<action name="RegAction_*" class="regAction" method="{1}">
+		<result name="regPage">/reg.jsp</result>
+	</action>
+4.跳转到/reg.jsp
+	<s:form>
+		<s:textfield name="email" />
+		...
+	</s:form>
+
+进行用户注册
+------------------
+1.注册页面--->提交
+2.RegAction.doReg()方法
+	public String doReg(){
+		1.接受用户信息--model
+		2.userService.saveEntity(model);
+		3.return "success" ;
+	}
+
+	public void validate(){
+		1.非空
+		2.密码一致性
+		3.email是否占用
+	}
+3.struts.xml
+	<action ...>
+		<result name="success">/index.jsp</result>
+		<result name="input">/reg.jsp</result>
+	</action>
+4.跳转到/reg.jsp|/index.jsp
+
+进入登陆 
+---------------------------
+1.导航栏-->首页
+2.LoginAction.toLoginPage()
+	public String toLoginPage()
+	{
+		1.return "loginPage" ;
+	}
+3.struts.xml
+	<action name="LoginAction_*" class=""  method="">
+		<result name="loginPage">/index.jsp</result>
+		<result name="input">/index.jsp</result>
+	</action>
+4.跳转到/index.jsp
+
+
+进行登陆验证
+-------------------
+1.登陆页面-->提交
+2.LoginAction.doLogin()
+	public String doLogin(){
+		return "success";
+	}
+
+	public void validate(){
+		1.验证登陆信息
+			User user = userService.validateLoginInfo(model.getEmail(),DataUtil.md5(model.getPassword()));
+			public User validateLoginInfo(String email,String md5){
+				String hql = "from User u where u.email = ? and u.password = ?" ;
+				List<User> list = this.findEntityByHQL(hql,email,md5);
+				return ValidateUtil.isValid(list)?list.get(0):null;
+			}
+		2.失败:错误信息,index.jsp
+		3.成功:user --> session
+	}
+3.struts.xml
+	<action ..>
+		<result name="success">/index.jsp</result>
+	</action>
+
+查看我的调查列表
+----------------------
+1.导航栏-->我的调查
+2.SurveyAction.mySurveys()方法
+	public String mySurveys(){
+		1.session --> user
+		2.this.mySurveys = surveyService.findMySurveys(user);
+			public List<Survey> findMySurveys(User user){
+				String hql = "from Survey s where s.user.id = ?" ;
+				return surveyDao.findEntityByHQL(hql,user.getId());
+			}
+		3.return "mySurveyListPage";
+	}
+3.struts.xml
+	<.
+4.跳转到/mySurveyList.jsp
+	<s:iterator value="mySurveys" var="s">
+		<s:property value="#s.id" />
+		<s:property value="#s.title" />
+		<s:date name="#s.createTime" format="yyyy-MM-dd hh:mm" />
+
+	</s:iterator>
+
+新建调查
+-----------------------
+1.导航栏-->新建调查
+2.SurveyAction.newSurvey()
+	public String newSurvey(){
+		1.session --> user
+		2.this.model = surveyService.newSurvey(user);
+			public Survey newSurvey(User user){
+				Survey s = new Survey();
+				Page p = new Page();
+				p.setSurvey(s);
+				s.getPages().add(p);
+				surveyDao.saveEntity(s);
+				pageDao.saveEntity(p);
+				return s ;
+			}
+		3.return "designSurveyPage" ;
+	}
+3.struts.xml
+	<result name="designSurveyPage">/designSurvey.jsp</result>
+4.跳转到/designSurvey.jsp
+	[略]
